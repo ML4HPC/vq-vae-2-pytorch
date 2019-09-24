@@ -92,6 +92,6 @@ class ABCDFrameDataset(Dataset):
     def __getitem__(self, idx):
         filename = self.list_files[idx]
         arr = np.load(filename)
-        arr = np.pad(arr, [[0, 0], [0, 0], [2, 2]], mode='edge').shape
+        arr = np.pad(arr, [[3, 3], [3, 3], [2, 2]], mode='edge')
         arr = np.expand_dims(arr, axis=0)
         return arr

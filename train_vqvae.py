@@ -8,6 +8,7 @@ from torchvision import datasets, transforms, utils
 
 from tqdm import tqdm
 
+from dataset import ABCDFrameDataset
 from vqvae import VQVAE
 from scheduler import CycleScheduler
 
@@ -23,7 +24,7 @@ def train(epoch, loader, model, optimizer, scheduler, device):
     mse_sum = 0
     mse_n = 0
 
-    for i, (img, label) in enumerate(loader):
+    for i, img in enumerate(loader):
         model.zero_grad()
 
         img = img.to(device)
@@ -51,29 +52,29 @@ def train(epoch, loader, model, optimizer, scheduler, device):
             )
         )
 
-        if i % 100 == 0:
-            model.eval()
+        # if i % 100 == 0:
+        #     model.eval()
 
-            sample = img[:sample_size]
+        #     sample = img[:sample_size]
 
-            with torch.no_grad():
-                out, _ = model(sample)
+        #     with torch.no_grad():
+        #         out, _ = model(sample)
 
-            utils.save_image(
-                torch.cat([sample, out], 0),
-                f'sample/{str(epoch + 1).zfill(5)}_{str(i).zfill(5)}.png',
-                nrow=sample_size,
-                normalize=True,
-                range=(-1, 1),
-            )
+        #     utils.save_image(
+        #         torch.cat([sample, out], 0),
+        #         f'sample/{str(epoch + 1).zfill(5)}_{str(i).zfill(5)}.png',
+        #         nrow=sample_size,
+        #         normalize=True,
+        #         range=(-1, 1),
+        #     )
 
-            model.train()
+        #     model.train()
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--size', type=int, default=256)
-    parser.add_argument('--epoch', type=int, default=560)
+    parser.add_argument('--size', type=int, default=4)
+    parser.add_argument('--epoch', type=int, default=1)
     parser.add_argument('--lr', type=float, default=3e-4)
     parser.add_argument('--sched', type=str)
     parser.add_argument('path', type=str)
@@ -82,19 +83,14 @@ if __name__ == '__main__':
 
     print(args)
 
-    device = 'cuda'
+    if torch.cuda.is_available():
+        device = 'cuda'
+    else:
+        device = 'cpu'
 
-    transform = transforms.Compose(
-        [
-            transforms.Resize(args.size),
-            transforms.CenterCrop(args.size),
-            transforms.ToTensor(),
-            transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),
-        ]
-    )
-
-    dataset = datasets.ImageFolder(args.path, transform=transform)
-    loader = DataLoader(dataset, batch_size=128, shuffle=True, num_workers=4)
+    dataset = ABCDFrameDataset(args.path)
+    loader = DataLoader(dataset, batch_size=args.size,
+                        shuffle=True, num_workers=4)
 
     model = nn.DataParallel(VQVAE()).to(device)
 
@@ -108,5 +104,6 @@ if __name__ == '__main__':
     for i in range(args.epoch):
         train(i, loader, model, optimizer, scheduler, device)
         torch.save(
-            model.module.state_dict(), f'checkpoint/vqvae_{str(i + 1).zfill(3)}.pt'
+            model.module.state_dict(
+            ), f'checkpoint/vqvae_{str(i + 1).zfill(3)}.pt'
         )
