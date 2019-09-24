@@ -2,6 +2,7 @@ import argparse
 from pathlib import Path
 
 import numpy as np
+from tqdm import tqdm
 
 from dataset import ABCDMidDataset
 
@@ -15,10 +16,9 @@ def extract_frames(in_path, out_path):
     if not out_path.exists():
         out_path.mkdir()
 
-    for row in dataset:
-        print(row['subject'])
+    for row in tqdm(dataset, desc='Image files'):
         arr = np.moveaxis(row['mid'], -1, 0)
-        for i in range(len(arr)):
+        for i in tqdm(range(len(arr)), desc='Frames'):
             np.save(out_path / Path(row['file_mid']).name.replace(
                 '_bold.nii', f'_frame-{i:03d}.npy'), arr[i])
         del row, arr
