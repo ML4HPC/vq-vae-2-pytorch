@@ -1,5 +1,5 @@
-# vq-vae-2-pytorch
-HELLO
+# vq-vae-2-pytorch for ABCD fMRI dataset
+
 Implementation of Generating Diverse High-Fidelity Images with VQ-VAE-2 in PyTorch
 
 ## Requisite
